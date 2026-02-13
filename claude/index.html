@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: monospace;
+    color: #eee;
+  }
+  #game-container { text-align: center; }
+  canvas {
+    border: 2px solid #e94560;
+    background: #16213e;
+    display: block;
+    margin: 16px auto;
+  }
+  #score { font-size: 24px; letter-spacing: 2px; }
+  #message { font-size: 18px; margin-top: 12px; color: #e94560; min-height: 24px; }
+</style>
+</head>
+<body>
+<div id="game-container">
+  <div id="score">Score: 0</div>
+  <canvas id="canvas" width="400" height="400"></canvas>
+  <div id="message">Press any arrow key to start</div>
+</div>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const messageEl = document.getElementById('message');
+
+const GRID = 20;
+const COLS = canvas.width / GRID;
+const ROWS = canvas.height / GRID;
+const TICK_MS = 100;
+
+let snake, dir, nextDir, food, score, running, gameOver;
+
+function init() {
+  const mid = Math.floor(ROWS / 2);
+  snake = [{ x: 5, y: mid }, { x: 4, y: mid }, { x: 3, y: mid }];
+  dir = { x: 0, y: 0 };
+  nextDir = { x: 0, y: 0 };
+  score = 0;
+  running = false;
+  gameOver = false;
+  placeFood();
+  updateScore();
+  messageEl.textContent = 'Press any arrow key to start';
+  draw();
+}
+
+function placeFood() {
+  while (true) {
+    const pos = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
+    if (!snake.some(s => s.x === pos.x && s.y === pos.y)) {
+      food = pos;
+      return;
+    }
+  }
+}
+
+function updateScore() {
+  scoreEl.textContent = 'Score: ' + score;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  for (let x = 0; x < COLS; x++) {
+    for (let y = 0; y < ROWS; y++) {
+      ctx.strokeRect(x * GRID, y * GRID, GRID, GRID);
+    }
+  }
+
+  // food
+  ctx.fillStyle = '#e94560';
+  ctx.beginPath();
+  ctx.arc(food.x * GRID + GRID / 2, food.y * GRID + GRID / 2, GRID / 2 - 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // snake
+  snake.forEach((seg, i) => {
+    ctx.fillStyle = i === 0 ? '#0fff95' : '#0cbf75';
+    const inset = i === 0 ? 1 : 2;
+    ctx.fillRect(seg.x * GRID + inset, seg.y * GRID + inset, GRID - inset * 2, GRID - inset * 2);
+  });
+}
+
+function tick() {
+  if (!running || gameOver) return;
+
+  dir = { ...nextDir };
+  const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+  // wall collision
+  if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
+    endGame();
+    return;
+  }
+
+  // self collision
+  if (snake.some(s => s.x === head.x && s.y === head.y)) {
+    endGame();
+    return;
+  }
+
+  snake.unshift(head);
+
+  if (head.x === food.x && head.y === food.y) {
+    score += 10;
+    updateScore();
+    placeFood();
+  } else {
+    snake.pop();
+  }
+
+  draw();
+}
+
+function endGame() {
+  gameOver = true;
+  running = false;
+  messageEl.textContent = 'Game Over! Press Enter to restart';
+  draw();
+}
+
+document.addEventListener('keydown', e => {
+  const key = e.key;
+
+  if (gameOver && key === 'Enter') {
+    init();
+    return;
+  }
+
+  const dirs = {
+    ArrowUp:    { x:  0, y: -1 },
+    ArrowDown:  { x:  0, y:  1 },
+    ArrowLeft:  { x: -1, y:  0 },
+    ArrowRight: { x:  1, y:  0 },
+  };
+
+  if (!dirs[key]) return;
+  e.preventDefault();
+
+  const d = dirs[key];
+
+  // prevent reversing
+  if (dir.x + d.x === 0 && dir.y + d.y === 0 && running) return;
+
+  nextDir = d;
+
+  if (!running && !gameOver) {
+    running = true;
+    messageEl.textContent = '';
+  }
+});
+
+setInterval(tick, TICK_MS);
+init();
+</script>
+</body>
+</html>
