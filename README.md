@@ -22,7 +22,7 @@ This repo includes `.github/workflows/pages.yml` to deploy automatically on push
 
 ### One-time GitHub setup
 
-1. Create a new GitHub repository (for example `snake-llm`).
+1. Create a new GitHub repository (for example `snake-agentic-code`).
 2. Push this folder to the `main` branch.
 3. In GitHub: `Settings -> Pages -> Build and deployment`, set `Source` to **GitHub Actions**.
 
